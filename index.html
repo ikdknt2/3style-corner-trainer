@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edge 3style trainer</title>
+    <title>3style エッジペアトレーナー</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,12 +11,15 @@
 <div class="container">
     <h1>3style Edge Trainer</h1>
     
-    <div class="scheme-section">
-        <label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
-        <input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
-        <div class="scheme-guide" id="schemeGuide"></div>
-    </div>
+    <div class="counter-display" id="counterDisplay">残り: 0 / 0</div>
+
+    <div class="pair-display" id="pairDisplay">--</div>
+    <button id="nextBtn">次へ (Space)</button>
     
+    <div class="prev-display" id="prevDisplay"></div>
+
+    <hr class="separator">
+
     <div class="settings-grid">
         <div class="filter-section">
             <label for="bufferInput">Buffer (1文字)</label>
@@ -27,17 +30,15 @@
             <input type="text" id="firstCharInput" placeholder="例: -あ, -う">
         </div>
     </div>
-
-    <div class="counter-display" id="counterDisplay">残り: 0 / 0</div>
-
-    <div class="pair-display" id="pairDisplay">--</div>
-    <button id="nextBtn">次へ (Space)</button>
     
-    <div class="prev-display" id="prevDisplay"></div>
+    <div class="scheme-section">
+        <label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
+        <input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
+        <div class="scheme-guide" id="schemeGuide"></div>
+    </div>
 </div>
 
 <script>
-    // ユーザー指定の基準エッジ24面（正確な並び順）
     const baseStickers = [
         'UB', 'UR', 'UF', 'UL', 
         'FU', 'FR', 'FD', 'FL', 
@@ -47,20 +48,9 @@
         'DF', 'DR', 'DB', 'DL'
     ];
 
-    // 新しい並び順に基づいた正確な反転エッジ（禁止ペア）のインデックス
     const invalidIndexPairs = [
-        [0, 12], // UB-BU
-        [1, 8],  // UR-RU
-        [2, 4],  // UF-FU
-        [3, 16], // UL-LU
-        [5, 11], // FR-RF
-        [7, 17], // FL-LF
-        [6, 20], // FD-DF
-        [9, 19], // RB-LB
-        [10, 21],// RD-DR
-        [13, 19],// BL-LB
-        [14, 22],// BD-DB
-        [15, 18] // BR-LD
+        [0, 12], [1, 8], [2, 4], [3, 16], [5, 11], [7, 17], 
+        [6, 20], [9, 19], [10, 21], [13, 19], [14, 22], [15, 18]
     ];
 
     const schemeInput = document.getElementById('schemeInput');
@@ -76,7 +66,6 @@
     let totalPairsInDeck = 0;
     let activePair = "";
 
-    // 4×6グリッドの表示を更新する関数
     function updateGuide(lettersList) {
         schemeGuide.innerHTML = '';
         baseStickers.forEach((sticker, idx) => {
