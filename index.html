@@ -1,51 +1,60 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3style エッジペアトレーナー</title>
-    <link rel="stylesheet" href="style.css">
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>3style エッジペアトレーナー</title>
+	<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="container">
-    <h1>3style Edge Trainer</h1>
-    
-    <div class="counter-display" id="counterDisplay">残り: 0 / 0</div>
+	<div class="container">
+		<h1>3style Edge Trainer</h1>
 
-    <div class="pair-display" id="pairDisplay">--</div>
-    <button id="nextBtn">次へ (Space)</button>
-    
-    <div class="prev-display" id="prevDisplay"></div>
+		<div class="counter-display" id="counterDisplay">残り: 0 / 0</div>
 
-    <hr class="separator">
+		<div class="pair-display" id="pairDisplay">--</div>
+		<button id="nextBtn">次へ (Space)</button>
 
-    <div class="settings-grid">
-        <div class="filter-section">
-            <label for="bufferInput">Buffer (1文字)</label>
-            <input type="text" id="bufferInput" maxlength="1" placeholder="例：あ" value="あ">
+		<div class="prev-display" id="prevDisplay"></div>
+
+		<hr class="separator">
+
+		<div class="settings-grid">
+			<div class="filter-section">
+				<label for="bufferInput">Buffer (1文字)</label>
+				<input type="text" id="bufferInput" maxlength="1" placeholder="例：あ" value="あ">
         </div>
-        <div class="filter-section">
-            <label for="firstCharInput">ペア指定（カンマ区切り可）</label>
-            <input type="text" id="firstCharInput" placeholder="例: -あ, -う">
+				<div class="filter-section">
+					<label for="firstCharInput">ペア指定（カンマ区切り可）</label>
+					<input type="text" id="firstCharInput" placeholder="例: -あ, -う">
         </div>
-    </div>
-    
-    <div class="scheme-section">
-        <label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
-        <input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
-        <div class="scheme-guide" id="schemeGuide"></div>
-    </div>
-</div>
+				</div>
 
-<script>
+				<div class="scheme-section">
+					<label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
+					<input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
+
+					<div class="scheme-controls">
+						<button id="presetABtn" class="sub-btn">まっさんナンバリング</button>
+						<button id="presetBBtn" class="sub-btn">Speffez Scheme</button>
+					</div>
+
+					<div class="scheme-guide" id="schemeGuide"></div>
+				</div>
+			</div>
+
+			<script>
+				// プリセット文字列の定義
+    const PRESET_A = "あいうえかきくけさしすせたちつてなにぬねはひふへ";
+    const PRESET_B = "ABCDIJKLMNOPQRSTEFGHUVWX";
+    
     const baseStickers = [
-        'UB', 'UR', 'UF', 'UL', 
-        'FU', 'FR', 'FD', 'FL', 
-        'RU', 'RB', 'RD', 'RF',
-        'BU', 'BL', 'BD', 'BR', 
-        'LU', 'LF', 'LD', 'LB', 
-        'DF', 'DR', 'DB', 'DL'
+        'UB', 'UR', 'UF', 'UL', 'FU', 'FR', 'FD', 'FL', 
+        'RU', 'RB', 'RD', 'RF', 'BU', 'BL', 'BD', 'BR', 
+        'LU', 'LF', 'LD', 'LB', 'DF', 'DR', 'DB', 'DL'
     ];
 
     const invalidIndexPairs = [
@@ -61,6 +70,9 @@
     const counterDisplay = document.getElementById('counterDisplay');
     const prevDisplay = document.getElementById('prevDisplay');
     const schemeGuide = document.getElementById('schemeGuide');
+    
+    const presetABtn = document.getElementById('presetABtn');
+    const presetBBtn = document.getElementById('presetBBtn');
 
     let currentDeck = [];
     let totalPairsInDeck = 0;
@@ -85,10 +97,8 @@
     function getExcludedLetters(lettersList) {
         const bufferChar = bufferInput.value.trim();
         if (!bufferChar || !lettersList.includes(bufferChar)) return [];
-
         const bufferIdx = lettersList.indexOf(bufferChar);
         let partnerChar = '';
-
         for (let pair of invalidIndexPairs) {
             if (pair.includes(bufferIdx)) {
                 const partnerIdx = pair[0] === bufferIdx ? pair[1] : pair[0];
@@ -111,7 +121,6 @@
 
     function matchConditions(firstChar, secondChar, conditions, availableLetters) {
         if (conditions.length === 0 || (conditions.length === 1 && conditions[0] === "")) return true;
-
         for (let cond of conditions) {
             if (cond.startsWith('-')) {
                 const charsPart = cond.substring(1);
@@ -134,57 +143,44 @@
         nextBtn.disabled = false;
         prevDisplay.textContent = "";
         activePair = "";
-
         const lettersList = getLettersList();
         updateGuide(lettersList);
-
         if (lettersList.length !== 24) {
-            pairDisplay.textContent = `エラー: レタースキームは必ず24文字にしてください (現在: ${lettersList.length}文字)`;
+            pairDisplay.textContent = `エラー: 24文字必要です (現在: ${lettersList.length})`;
             pairDisplay.classList.add('error');
             currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
             return;
         }
-
         const excluded = getExcludedLetters(lettersList);
         const availableLetters = lettersList.filter(char => !excluded.includes(char));
-
         const rawInput = firstCharInput.value.trim();
         const conditions = rawInput.split(/[,，、]/).map(s => s.trim());
-
         const allInputChars = rawInput.replace(/[-‐,，、\s]/g, '').split('');
         const hasConflict = allInputChars.some(char => excluded.includes(char));
-
         if (hasConflict) {
             const bChar = excluded[0] || '';
             const pChar = excluded[1] || '';
-            pairDisplay.textContent = `エラー: 指定文字がBuffer「${bChar}」または相方「${pChar}」と重複しています`;
+            pairDisplay.textContent = `エラー: Buffer「${bChar}」または相方「${pChar}」と重複`;
             pairDisplay.classList.add('error');
             currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
             return;
         }
-
         const newDeck = [];
-
         for (let i = 0; i < 24; i++) {
             for (let j = 0; j < 24; j++) {
                 if (isInvalidIndexPair(i, j)) continue;
-
                 const firstChar = lettersList[i];
                 const secondChar = lettersList[j];
-
                 if (excluded.includes(firstChar) || excluded.includes(secondChar)) continue;
-
                 if (matchConditions(firstChar, secondChar, conditions, availableLetters)) {
                     newDeck.push(firstChar + secondChar);
                 }
             }
         }
-
         for (let i = newDeck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
         }
-
         currentDeck = newDeck;
         totalPairsInDeck = newDeck.length;
         updateCounter();
@@ -196,7 +192,6 @@
 
     function showNextPair() {
         if (pairDisplay.classList.contains('error')) return;
-
         if (currentDeck.length === 0) {
             generateDeck();
             if (currentDeck.length === 0) {
@@ -206,20 +201,30 @@
                 return;
             }
         }
-
-        if (activePair) {
-            prevDisplay.textContent = `前回のペア: ${activePair}`;
-        }
-
+        if (activePair) prevDisplay.textContent = `前回のペア: ${activePair}`;
         activePair = currentDeck.shift();
         pairDisplay.textContent = activePair;
         updateCounter();
     }
 
+    // --- プリセットボタンのイベント機能 ---
+    presetABtn.addEventListener('click', () => {
+        schemeInput.value = PRESET_A;
+        bufferInput.value = "あ"; // バッファも自動で日本語に合わせる
+        generateDeck();
+        showNextPair();
+    });
+
+    presetBBtn.addEventListener('click', () => {
+        schemeInput.value = PRESET_B;
+        bufferInput.value = "A"; // バッファも自動でアルファベットに合わせる
+        generateDeck();
+        showNextPair();
+    });
+
     schemeInput.addEventListener('input', generateDeck);
     bufferInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
     firstCharInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
-
     nextBtn.addEventListener('click', showNextPair);
 
     document.addEventListener('keydown', (event) => {
@@ -230,9 +235,11 @@
         }
     });
 
+    // 初回起動
     generateDeck();
     if (!pairDisplay.classList.contains('error')) showNextPair();
-</script>
+			</script>
 
 </body>
+
 </html>
