@@ -38,8 +38,8 @@
 					<input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
 
 					<div class="scheme-controls">
-						<button id="presetABtn" class="sub-btn">まっさんナンバリング</button>
-						<button id="presetBBtn" class="sub-btn">Speffez Scheme</button>
+						<button id="presetABtn" class="sub-btn">プリセット A (日本語)</button>
+						<button id="presetBBtn" class="sub-btn">プリセット B (英語)</button>
 					</div>
 
 					<div class="scheme-guide" id="schemeGuide"></div>
@@ -47,8 +47,7 @@
 			</div>
 
 			<script>
-				// プリセット文字列の定義
-    const PRESET_A = "あいうえかきくけさしすせたちつてなにぬねはひふへ";
+				const PRESET_A = "あいうえかきくけさしすせたちつてなにぬねはひふへ";
     const PRESET_B = "ABCDIJKLMNOPQRSTEFGHUVWX";
     
     const baseStickers = [
@@ -77,6 +76,7 @@
     let currentDeck = [];
     let totalPairsInDeck = 0;
     let activePair = "";
+    let isFinished = false; // 全て表示し終わったかどうかのフラグ
 
     function updateGuide(lettersList) {
         schemeGuide.innerHTML = '';
@@ -143,6 +143,8 @@
         nextBtn.disabled = false;
         prevDisplay.textContent = "";
         activePair = "";
+        isFinished = false;
+
         const lettersList = getLettersList();
         updateGuide(lettersList);
         if (lettersList.length !== 24) {
@@ -186,38 +188,62 @@
         updateCounter();
     }
 
+    // カウンターの表示ロジックを修正 (+1して現在表示中のペアを含める)
     function updateCounter() {
-        counterDisplay.textContent = `残り: ${currentDeck.length} / ${totalPairsInDeck}`;
+        if (isFinished) {
+            counterDisplay.textContent = `残り: 0 / ${totalPairsInDeck}`;
+        } else {
+            // デッキに残っている数 ＋ 今画面に見えているアクティブな1枚
+            const currentShowingCount = currentDeck.length + (activePair ? 1 : 0);
+            counterDisplay.textContent = `残り: ${currentShowingCount} / ${totalPairsInDeck}`;
+        }
     }
 
     function showNextPair() {
         if (pairDisplay.classList.contains('error')) return;
-        if (currentDeck.length === 0) {
+
+        // 全て解き終わった状態(isFinished)で「次へ」を押したら、自動的に次の周を生成
+        if (isFinished || (currentDeck.length === 0 && !activePair)) {
             generateDeck();
             if (currentDeck.length === 0) {
                 pairDisplay.textContent = "なし";
-                counterDisplay.textContent = "残り: 0 / 0";
+                isFinished = true;
+                updateCounter();
                 prevDisplay.textContent = "";
                 return;
             }
         }
-        if (activePair) prevDisplay.textContent = `前回のペア: ${activePair}`;
-        activePair = currentDeck.shift();
-        pairDisplay.textContent = activePair;
+
+        // 前回のペア履歴を記録
+        if (activePair) {
+            prevDisplay.textContent = `前回のペア: ${activePair}`;
+        }
+
+        // 次のペアを取り出す
+        if (currentDeck.length > 0) {
+            activePair = currentDeck.shift();
+            pairDisplay.textContent = activePair;
+            isFinished = false;
+        } else {
+            // デッキは空だが、今画面に出したのが「最後の1枚」だった場合
+            activePair = "";
+            pairDisplay.textContent = "終了";
+            isFinished = true; // 次回スペースキー/クリックで次の回へ
+        }
+        
         updateCounter();
     }
 
-    // --- プリセットボタンのイベント機能 ---
     presetABtn.addEventListener('click', () => {
         schemeInput.value = PRESET_A;
-        bufferInput.value = "あ"; // バッファも自動で日本語に合わせる
+        bufferInput.value = "あ";
         generateDeck();
         showNextPair();
     });
 
     presetBBtn.addEventListener('click', () => {
         schemeInput.value = PRESET_B;
-        bufferInput.value = "A"; // バッファも自動でアルファベットに合わせる
+        bufferInput.value = "A";
         generateDeck();
         showNextPair();
     });
@@ -235,7 +261,6 @@
         }
     });
 
-    // 初回起動
     generateDeck();
     if (!pairDisplay.classList.contains('error')) showNextPair();
 			</script>
