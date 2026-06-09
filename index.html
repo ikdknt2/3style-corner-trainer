@@ -12,14 +12,9 @@
     <h1>3style Edge Trainer</h1>
     
     <div class="scheme-section">
-        <label for="schemeInput">レタースキーム設定 (左から順に20文字)</label>
-        <input type="text" id="schemeInput" value="あいうえおかきくけさしすせたちつてなにぬね">
-        <div class="scheme-guide">
-            <span>UB:あ</span><span>UR:い</span><span>UF:う</span><span>UL:え</span><span>FU:お</span>
-            <span>FR:か</span><span>FD:き</span><span>FL:く</span><span>RU:け</span><span>RB:さ</span>
-            <span>RD:し</span><span>RF:す</span><span>BU:せ</span><span>BL:た</span><span>BD:ち</span>
-            <span>BR:つ</span><span>DF:て</span><span>DR:な</span><span>DB:に</span><span>DL:ぬ</span>
-        </div>
+        <label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
+        <input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
+        <div class="scheme-guide" id="schemeGuide"></div>
     </div>
     
     <div class="settings-grid">
@@ -42,25 +37,30 @@
 </div>
 
 <script>
-    // 基準となるエッジ20面
+    // ユーザー指定の基準エッジ24面（正確な並び順）
     const baseStickers = [
-        'UB', 'UR', 'UF', 'UL', 'FU', 'FR', 'FD', 'FL', 'RU', 'RB',
-        'RD', 'RF', 'BU', 'BL', 'BD', 'BR', 'DF', 'DR', 'DB', 'DL'
+        'UB', 'UR', 'UF', 'UL', 
+        'FU', 'FR', 'FD', 'FL', 
+        'RU', 'RB', 'RD', 'RF',
+        'BU', 'BL', 'BD', 'BR', 
+        'LU', 'LF', 'LD', 'LB', 
+        'DF', 'DR', 'DB', 'DL'
     ];
 
-    // ご提示いただいた反転エッジ（禁止ペア）のインデックス対応表 (0~19のペア)
-    // 例: UB(0) と BU(12), UR(1) と RU(8), UF(2) と FU(4) ...
+    // 新しい並び順に基づいた正確な反転エッジ（禁止ペア）のインデックス
     const invalidIndexPairs = [
         [0, 12], // UB-BU
         [1, 8],  // UR-RU
         [2, 4],  // UF-FU
-        [3, 13], // UL-LU (基準リストのBLが対応)
+        [3, 16], // UL-LU
         [5, 11], // FR-RF
-        [7, 9],  // FL-RB (一般的なFLLF/RBRB対応)
-        [6, 16], // FD-DF
-        [10, 17],// RD-DR
-        [14, 18],// BD-DB
-        [15, 19] // BR-DL
+        [7, 17], // FL-LF
+        [6, 20], // FD-DF
+        [9, 19], // RB-LB
+        [10, 21],// RD-DR
+        [13, 19],// BL-LB
+        [14, 22],// BD-DB
+        [15, 18] // BR-LD
     ];
 
     const schemeInput = document.getElementById('schemeInput');
@@ -70,18 +70,29 @@
     const firstCharInput = document.getElementById('firstCharInput');
     const counterDisplay = document.getElementById('counterDisplay');
     const prevDisplay = document.getElementById('prevDisplay');
+    const schemeGuide = document.getElementById('schemeGuide');
 
     let currentDeck = [];
     let totalPairsInDeck = 0;
     let activePair = "";
 
-    // 現在の入力から20文字のレタースキーム配列を取得する関数
+    // 4×6グリッドの表示を更新する関数
+    function updateGuide(lettersList) {
+        schemeGuide.innerHTML = '';
+        baseStickers.forEach((sticker, idx) => {
+            const char = lettersList[idx] || '?';
+            const item = document.createElement('div');
+            item.className = 'guide-item';
+            item.innerHTML = `<span class="sticker-name">${sticker}</span>:<span class="sticker-char">${char}</span>`;
+            schemeGuide.appendChild(item);
+        });
+    }
+
     function getLettersList() {
         const val = schemeInput.value.trim();
         return val.split('');
     }
 
-    // バッファ文字とその相方を特定する関数（インデックス基準）
     function getExcludedLetters(lettersList) {
         const bufferChar = bufferInput.value.trim();
         if (!bufferChar || !lettersList.includes(bufferChar)) return [];
@@ -99,9 +110,8 @@
         return [bufferChar, partnerChar].filter(Boolean);
     }
 
-    // 2つのインデックスが禁止ペアかどうか判定する関数
     function isInvalidIndexPair(idx1, idx2) {
-        if (idx1 === idx2) return true; // 同じ文字（重複）はNG
+        if (idx1 === idx2) return true;
         for (let pair of invalidIndexPairs) {
             if ((pair[0] === idx1 && pair[1] === idx2) || (pair[0] === idx2 && pair[1] === idx1)) {
                 return true;
@@ -137,23 +147,21 @@
         activePair = "";
 
         const lettersList = getLettersList();
+        updateGuide(lettersList);
 
-        // スキームが20文字ちょうどでない場合はエラー
-        if (lettersList.length !== 20) {
-            pairDisplay.textContent = `エラー: レタースキームは必ず20文字にしてください (現在: ${lettersList.length}文字)`;
+        if (lettersList.length !== 24) {
+            pairDisplay.textContent = `エラー: レタースキームは必ず24文字にしてください (現在: ${lettersList.length}文字)`;
             pairDisplay.classList.add('error');
             currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
             return;
         }
 
         const excluded = getExcludedLetters(lettersList);
-        // 使用可能な文字リスト
         const availableLetters = lettersList.filter(char => !excluded.includes(char));
 
         const rawInput = firstCharInput.value.trim();
         const conditions = rawInput.split(/[,，、]/).map(s => s.trim());
 
-        // バッファ被りエラーチェック
         const allInputChars = rawInput.replace(/[-‐,，、\s]/g, '').split('');
         const hasConflict = allInputChars.some(char => excluded.includes(char));
 
@@ -168,25 +176,21 @@
 
         const newDeck = [];
 
-        // インデックスベースで総当たり
-        for (let i = 0; i < 20; i++) {
-            for (let j = 0; j < 20; j++) {
+        for (let i = 0; i < 24; i++) {
+            for (let j = 0; j < 24; j++) {
                 if (isInvalidIndexPair(i, j)) continue;
 
                 const firstChar = lettersList[i];
                 const secondChar = lettersList[j];
 
-                // バッファや相方が含まれるペアは除外
                 if (excluded.includes(firstChar) || excluded.includes(secondChar)) continue;
 
-                // 条件フィルターのチェック
                 if (matchConditions(firstChar, secondChar, conditions, availableLetters)) {
                     newDeck.push(firstChar + secondChar);
                 }
             }
         }
 
-        // シャッフル
         for (let i = newDeck.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
@@ -223,8 +227,7 @@
         updateCounter();
     }
 
-    // リアルタイム反映のイベント設定
-    schemeInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
+    schemeInput.addEventListener('input', generateDeck);
     bufferInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
     firstCharInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
 
