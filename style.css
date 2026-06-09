@@ -16,7 +16,7 @@ body {
     padding: 30px;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    max-width: 460px;
+    max-width: 480px;
     width: 95%;
 }
 
@@ -26,12 +26,11 @@ h1 {
     color: #555;
 }
 
-/* レタースキーム用の追加スタイル */
 .scheme-section {
     text-align: left;
     margin-bottom: 20px;
     background: #f8f9fa;
-    padding: 12px;
+    padding: 15px;
     border-radius: 8px;
     border: 1px solid #e9ecef;
 }
@@ -55,21 +54,32 @@ h1 {
     font-family: monospace;
 }
 
+/* 横4マスのグリッド設定 */
 .scheme-guide {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
-    margin-top: 8px;
-    font-size: 0.7rem;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 0.75rem;
     color: #6c757d;
     text-align: center;
 }
 
-.scheme-guide span {
+.guide-item {
     background: white;
-    padding: 2px;
+    padding: 4px;
     border-radius: 4px;
-    border: 1px solid #f1f3f5;
+    border: 1px solid #e9ecef;
+}
+
+.sticker-name {
+    font-weight: bold;
+    color: #495057;
+}
+
+.sticker-char {
+    color: #007bff;
+    font-weight: bold;
 }
 
 .settings-grid {
