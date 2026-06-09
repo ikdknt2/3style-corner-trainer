@@ -4,10 +4,11 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
     margin: 0;
     background-color: #f0f2f5;
     color: #333;
+    padding: 20px 0;
 }
 
 .container {
@@ -24,86 +25,6 @@ h1 {
     font-size: 1.5rem;
     margin-bottom: 20px;
     color: #555;
-}
-
-.scheme-section {
-    text-align: left;
-    margin-bottom: 20px;
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-
-.scheme-section label {
-    font-size: 0.85rem;
-    font-weight: bold;
-    color: #495057;
-    display: block;
-    margin-bottom: 6px;
-}
-
-.scheme-section input {
-    width: 100%;
-    padding: 10px;
-    font-size: 1.1rem;
-    letter-spacing: 2px;
-    border: 1px solid #ced4da;
-    border-radius: 6px;
-    box-sizing: border-box;
-    font-family: monospace;
-}
-
-/* 横4マスのグリッド設定 */
-.scheme-guide {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-    margin-top: 12px;
-    font-size: 0.75rem;
-    color: #6c757d;
-    text-align: center;
-}
-
-.guide-item {
-    background: white;
-    padding: 4px;
-    border-radius: 4px;
-    border: 1px solid #e9ecef;
-}
-
-.sticker-name {
-    font-weight: bold;
-    color: #495057;
-}
-
-.sticker-char {
-    color: #007bff;
-    font-weight: bold;
-}
-
-.settings-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
-    text-align: left;
-}
-
-.filter-section label {
-    font-size: 0.85rem;
-    color: #666;
-    display: block;
-    margin-bottom: 5px;
-}
-
-.filter-section input {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    box-sizing: border-box;
 }
 
 .counter-display {
@@ -163,4 +84,92 @@ button:disabled {
     font-size: 1rem;
     color: #888;
     min-height: 1.5rem;
+    margin-bottom: 20px;
+}
+
+/* 境界線のスタイル */
+.separator {
+    border: 0;
+    height: 1px;
+    background: #e9ecef;
+    margin: 20px 0;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.filter-section label {
+    font-size: 0.85rem;
+    color: #666;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.filter-section input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+}
+
+/* 下部に移動したスキームエリア */
+.scheme-section {
+    text-align: left;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.scheme-section label {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #495057;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.scheme-section input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-family: monospace;
+}
+
+.scheme-guide {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-align: center;
+}
+
+.guide-item {
+    background: white;
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.sticker-name {
+    font-weight: bold;
+    color: #495057;
+}
+
+.sticker-char {
+    color: #007bff;
+    font-weight: bold;
 }
