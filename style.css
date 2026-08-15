@@ -125,6 +125,7 @@ button:hover { background-color: #0056b3; }
 }
 
 .scheme-section {
+    grid-column: 1 / -1; /* 修正ポイント：1列目から最後までスパンを広げる */
     text-align: left;
     background: #f8f9fa;
     padding: 15px;
