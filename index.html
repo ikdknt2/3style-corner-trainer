@@ -25,7 +25,7 @@
 		<div class="settings-grid">
 			<div class="filter-section">
 				<label for="bufferInput">Buffer (1文字)</label>
-				<input type="text" id="bufferInput" maxlength="1" placeholder="例：あ" value="あ">
+				<input type="text" id="bufferInput" maxlength="1" placeholder="例：う" value="う">
 			</div>
 			<div class="filter-section">
 				<label for="firstCharInput">ペア指定（カンマ区切り可）</label>
@@ -247,7 +247,7 @@
 
 	presetABtn.addEventListener('click', () => {
 		schemeInput.value = PRESET_A;
-		bufferInput.value = "あ";
+		bufferInput.value = "う";
 		generateDeck();
 		showNextPair();
 	});
