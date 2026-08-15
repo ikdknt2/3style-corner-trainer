@@ -4,14 +4,14 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>3style edge trainer</title>
+	<title>3style Corner Trainer</title>
 	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 	<div class="container">
-		<h1>3style Edge Trainer</h1>
+		<h1>3style Corner Trainer</h1>
 
 		<div class="counter-display" id="counterDisplay">残り: 0 / 0</div>
 
@@ -25,266 +25,255 @@
 		<div class="settings-grid">
 			<div class="filter-section">
 				<label for="bufferInput">Buffer (1文字)</label>
-				<input type="text" id="bufferInput" maxlength="1" placeholder="例：う" value="う">
-        </div>
-				<div class="filter-section">
-					<label for="firstCharInput">ペア指定（カンマ区切り可）</label>
-					<input type="text" id="firstCharInput" placeholder="例: あ-, -う">
-        </div>
-				</div>
-
-				<div class="scheme-section">
-					<label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
-					<input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
-
-					<div class="scheme-controls">
-						<button id="presetABtn" class="sub-btn">まっさん</button>
-						<button id="presetBBtn" class="sub-btn">speffez</button>
-					</div>
-
-					<div class="scheme-guide" id="schemeGuide"></div>
-				</div>
+				<input type="text" id="bufferInput" maxlength="1" placeholder="例：あ" value="あ">
 			</div>
+			<div class="filter-section">
+				<label for="firstCharInput">ペア指定（カンマ区切り可）</label>
+				<input type="text" id="firstCharInput" placeholder="例: い-, -う">
+			</div>
+
+			<div class="scheme-section">
+				<label for="schemeInput">レタースキーム設定 (左から順に24文字)</label>
+				<input type="text" id="schemeInput" value="あいうえかきくけさしすせたちつてなにぬねはひふへ">
+
+				<div class="scheme-controls">
+					<button id="presetABtn" class="sub-btn">まっさん</button>
+					<button id="presetBBtn" class="sub-btn">speffez</button>
+				</div>
+
+				<div class="scheme-guide" id="schemeGuide"></div>
+			</div>
+		</div>
+	</div>
 
 <script>
 	const PRESET_A = "あいうえかきくけさしすせたちつてなにぬねはひふへ";
-    const PRESET_B = "ABCDIJKLMNOPQRSTEFGHUVWX";
-    
-// 1. 重複をなくし、すべてのエッジステッカーを規則的に並べた配列（計24個）
-const baseStickers = [
-    // U面
-    'UB', 'UR', 'UF', 'UL', 
-    // F面
-    'FU', 'FR', 'FD', 'FL', 
-    // R面
-    'RU', 'RB', 'RD', 'RF', 
-    // B面
-    'BU', 'BL', 'BD', 'BR', 
-    // L面
-    'LU', 'LF', 'LD', 'LB', 
-    // D面
-    'DF', 'DR', 'DB', 'DL'
-];
+	const PRESET_B = "ABCDIJKLMNOPQRSTEFGHUVWX";
 
-// 2. 同じエッジの「反転（同一パーツの向き違い）」を無効とするペア一覧
-// 例: [0, 12] は UB と BU（同じエッジなので、同時にターゲットに選べない）
-const invalidIndexPairs = [
-    [0, 12], // UB - BU
-    [1, 8],  // UR - RU
-    [2, 4],  // UF - FU
-    [3, 16], // UL - LU
-    [5, 11], // FR - RF
-    [7, 17], // FL - LF
-    [6, 20], // FD - DF
-    [9, 15], // RB - BR
-    [10, 21],// RD - DR
-    [13, 19],// BL - LB
-    [14, 22],// BD - DB
-    [18, 23] // LD - DL
-];
+	// 1. コーナー24ステッカーの定義（8パーツ × 3ステッカー = 24個）
+	const baseStickers = [
+		// U面 (0~3)
+		'UBL', 'UBR', 'UFR', 'UFL',
+		// F面 (4~7)
+		'FLU', 'FRU', 'FDR', 'FDL',
+		// R面 (8~11)
+		'RFU', 'RBU', 'RBD', 'RFD',
+		// B面 (12~15)
+		'BRU', 'BLU', 'BLD', 'BRD',
+		// L面 (16~19)
+		'LBU', 'LFU', 'LFD', 'LBD',
+		// D面 (20~23)
+		'DFL', 'DFR', 'DBR', 'DBL'
+	];
 
-    const schemeInput = document.getElementById('schemeInput');
-    const pairDisplay = document.getElementById('pairDisplay');
-    const nextBtn = document.getElementById('nextBtn');
-    const bufferInput = document.getElementById('bufferInput');
-    const firstCharInput = document.getElementById('firstCharInput');
-    const counterDisplay = document.getElementById('counterDisplay');
-    const prevDisplay = document.getElementById('prevDisplay');
-    const schemeGuide = document.getElementById('schemeGuide');
-    
-    const presetABtn = document.getElementById('presetABtn');
-    const presetBBtn = document.getElementById('presetBBtn');
+	// 2. 同一コーナーパーツに含まれる3つのステッカー（ツイスト無効グループ）
+	const cornerPartGroups = [
+		[0, 13, 16], // UBL - BUL - LUB
+		[1, 9, 12],  // UBR - RUB - BUR
+		[2, 5, 8],   // UFR - FUR - RUF
+		[3, 4, 17],  // UFL - FUL - LUF
+		[7, 18, 20], // FDL - LFD - DFL
+		[6, 11, 21], // FDR - RFD - DFR
+		[10, 15, 22],// RBD - BRD - DBR
+		[14, 19, 23] // BLD - LBD - DBL
+	];
 
-    let currentDeck = [];
-    let totalPairsInDeck = 0;
-    let activePair = "";
-    let isFinished = false; // 全て表示し終わったかどうかのフラグ
+	const schemeInput = document.getElementById('schemeInput');
+	const pairDisplay = document.getElementById('pairDisplay');
+	const nextBtn = document.getElementById('nextBtn');
+	const bufferInput = document.getElementById('bufferInput');
+	const firstCharInput = document.getElementById('firstCharInput');
+	const counterDisplay = document.getElementById('counterDisplay');
+	const prevDisplay = document.getElementById('prevDisplay');
+	const schemeGuide = document.getElementById('schemeGuide');
 
-    function updateGuide(lettersList) {
-        schemeGuide.innerHTML = '';
-        baseStickers.forEach((sticker, idx) => {
-            const char = lettersList[idx] || '?';
-            const item = document.createElement('div');
-            item.className = 'guide-item';
-            item.innerHTML = `<span class="sticker-name">${sticker}</span>:<span class="sticker-char">${char}</span>`;
-            schemeGuide.appendChild(item);
-        });
-    }
+	const presetABtn = document.getElementById('presetABtn');
+	const presetBBtn = document.getElementById('presetBBtn');
 
-    function getLettersList() {
-        const val = schemeInput.value.trim();
-        return val.split('');
-    }
+	let currentDeck = [];
+	let totalPairsInDeck = 0;
+	let activePair = "";
+	let isFinished = false;
 
-    function getExcludedLetters(lettersList) {
-        const bufferChar = bufferInput.value.trim();
-        if (!bufferChar || !lettersList.includes(bufferChar)) return [];
-        const bufferIdx = lettersList.indexOf(bufferChar);
-        let partnerChar = '';
-        for (let pair of invalidIndexPairs) {
-            if (pair.includes(bufferIdx)) {
-                const partnerIdx = pair[0] === bufferIdx ? pair[1] : pair[0];
-                partnerChar = lettersList[partnerIdx] || '';
-                break;
-            }
-        }
-        return [bufferChar, partnerChar].filter(Boolean);
-    }
+	function updateGuide(lettersList) {
+		schemeGuide.innerHTML = '';
+		baseStickers.forEach((sticker, idx) => {
+			const char = lettersList[idx] || '?';
+			const item = document.createElement('div');
+			item.className = 'guide-item';
+			item.innerHTML = `<span class="sticker-name">${sticker}</span>:<span class="sticker-char">${char}</span>`;
+			schemeGuide.appendChild(item);
+		});
+	}
 
-    function isInvalidIndexPair(idx1, idx2) {
-        if (idx1 === idx2) return true;
-        for (let pair of invalidIndexPairs) {
-            if ((pair[0] === idx1 && pair[1] === idx2) || (pair[0] === idx2 && pair[1] === idx1)) {
-                return true;
-            }
-        }
-        return false;
-    }
+	function getLettersList() {
+		const val = schemeInput.value.trim();
+		return val.split('');
+	}
 
-    function matchConditions(firstChar, secondChar, conditions, availableLetters) {
-        if (conditions.length === 0 || (conditions.length === 1 && conditions[0] === "")) return true;
-        for (let cond of conditions) {
-            if (cond.startsWith('-')) {
-                const charsPart = cond.substring(1);
-                const targetChars = charsPart.split('').filter(char => availableLetters.includes(char));
-                if (targetChars.includes(secondChar)) return true;
-            } else if (cond.endsWith('-')) {
-                const charsPart = cond.substring(0, cond.length - 1);
-                const targetChars = charsPart.split('').filter(char => availableLetters.includes(char));
-                if (targetChars.includes(firstChar)) return true;
-            } else if (cond.length > 0) {
-                const targetChars = cond.split('').filter(char => availableLetters.includes(char));
-                if (targetChars.includes(firstChar)) return true;
-            }
-        }
-        return false;
-    }
+	function getExcludedLetters(lettersList) {
+		const bufferChar = bufferInput.value.trim();
+		if (!bufferChar || !lettersList.includes(bufferChar)) return [];
+		const bufferIdx = lettersList.indexOf(bufferChar);
 
-    function generateDeck() {
-        pairDisplay.classList.remove('error');
-        nextBtn.disabled = false;
-        prevDisplay.textContent = "";
-        activePair = "";
-        isFinished = false;
+		let partnerChars = [];
+		for (let group of cornerPartGroups) {
+			if (group.includes(bufferIdx)) {
+				group.forEach(idx => {
+					if (lettersList[idx]) partnerChars.push(lettersList[idx]);
+				});
+				break;
+			}
+		}
+		return partnerChars;
+	}
 
-        const lettersList = getLettersList();
-        updateGuide(lettersList);
-        if (lettersList.length !== 24) {
-            pairDisplay.textContent = `エラー: 24文字必要です (現在: ${lettersList.length})`;
-            pairDisplay.classList.add('error');
-            currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
-            return;
-        }
-        const excluded = getExcludedLetters(lettersList);
-        const availableLetters = lettersList.filter(char => !excluded.includes(char));
-        const rawInput = firstCharInput.value.trim();
-        const conditions = rawInput.split(/[,，、]/).map(s => s.trim());
-        const allInputChars = rawInput.replace(/[-‐,，、\s]/g, '').split('');
-        const hasConflict = allInputChars.some(char => excluded.includes(char));
-        if (hasConflict) {
-            const bChar = excluded[0] || '';
-            const pChar = excluded[1] || '';
-            pairDisplay.textContent = `エラー: Buffer「${bChar}」または相方「${pChar}」と重複`;
-            pairDisplay.classList.add('error');
-            currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
-            return;
-        }
-        const newDeck = [];
-        for (let i = 0; i < 24; i++) {
-            for (let j = 0; j < 24; j++) {
-                if (isInvalidIndexPair(i, j)) continue;
-                const firstChar = lettersList[i];
-                const secondChar = lettersList[j];
-                if (excluded.includes(firstChar) || excluded.includes(secondChar)) continue;
-                if (matchConditions(firstChar, secondChar, conditions, availableLetters)) {
-                    newDeck.push(firstChar + secondChar);
-                }
-            }
-        }
-        for (let i = newDeck.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
-        }
-        currentDeck = newDeck;
-        totalPairsInDeck = newDeck.length;
-        updateCounter();
-    }
+	function isInvalidIndexPair(idx1, idx2) {
+		if (idx1 === idx2) return true;
+		for (let group of cornerPartGroups) {
+			if (group.includes(idx1) && group.includes(idx2)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    // カウンターの表示ロジックを修正 (+1して現在表示中のペアを含める)
-    function updateCounter() {
-        if (isFinished) {
-            counterDisplay.textContent = `残り: 0 / ${totalPairsInDeck}`;
-        } else {
-            // デッキに残っている数 ＋ 今画面に見えているアクティブな1枚
-            const currentShowingCount = currentDeck.length + (activePair ? 1 : 0);
-            counterDisplay.textContent = `残り: ${currentShowingCount} / ${totalPairsInDeck}`;
-        }
-    }
+	function matchConditions(firstChar, secondChar, conditions, availableLetters) {
+		if (conditions.length === 0 || (conditions.length === 1 && conditions[0] === "")) return true;
+		for (let cond of conditions) {
+			if (cond.startsWith('-')) {
+				const charsPart = cond.substring(1);
+				const targetChars = charsPart.split('').filter(char => availableLetters.includes(char));
+				if (targetChars.includes(secondChar)) return true;
+			} else if (cond.endsWith('-')) {
+				const charsPart = cond.substring(0, cond.length - 1);
+				const targetChars = charsPart.split('').filter(char => availableLetters.includes(char));
+				if (targetChars.includes(firstChar)) return true;
+			} else if (cond.length > 0) {
+				const targetChars = cond.split('').filter(char => availableLetters.includes(char));
+				if (targetChars.includes(firstChar)) return true;
+			}
+		}
+		return false;
+	}
 
-    function showNextPair() {
-        if (pairDisplay.classList.contains('error')) return;
+	function generateDeck() {
+		pairDisplay.classList.remove('error');
+		nextBtn.disabled = false;
+		prevDisplay.textContent = "";
+		activePair = "";
+		isFinished = false;
 
-        // 全て解き終わった状態(isFinished)で「次へ」を押したら、自動的に次の周を生成
-        if (isFinished || (currentDeck.length === 0 && !activePair)) {
-            generateDeck();
-            if (currentDeck.length === 0) {
-                pairDisplay.textContent = "なし";
-                isFinished = true;
-                updateCounter();
-                prevDisplay.textContent = "";
-                return;
-            }
-        }
+		const lettersList = getLettersList();
+		updateGuide(lettersList);
+		if (lettersList.length !== 24) {
+			pairDisplay.textContent = `エラー: 24文字必要です (現在: ${lettersList.length})`;
+			pairDisplay.classList.add('error');
+			currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
+			return;
+		}
+		const excluded = getExcludedLetters(lettersList);
+		const availableLetters = lettersList.filter(char => !excluded.includes(char));
+		const rawInput = firstCharInput.value.trim();
+		const conditions = rawInput.split(/[,，、]/).map(s => s.trim());
+		const allInputChars = rawInput.replace(/[-‐,，、\s]/g, '').split('');
+		const hasConflict = allInputChars.some(char => excluded.includes(char));
+		if (hasConflict) {
+			pairDisplay.textContent = `エラー: Bufferまたはその同一パーツ内の文字と重複`;
+			pairDisplay.classList.add('error');
+			currentDeck = []; totalPairsInDeck = 0; updateCounter(); nextBtn.disabled = true;
+			return;
+		}
+		const newDeck = [];
+		for (let i = 0; i < 24; i++) {
+			for (let j = 0; j < 24; j++) {
+				if (isInvalidIndexPair(i, j)) continue;
+				const firstChar = lettersList[i];
+				const secondChar = lettersList[j];
+				if (excluded.includes(firstChar) || excluded.includes(secondChar)) continue;
+				if (matchConditions(firstChar, secondChar, conditions, availableLetters)) {
+					newDeck.push(firstChar + secondChar);
+				}
+			}
+		}
+		for (let i = newDeck.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
+		}
+		currentDeck = newDeck;
+		totalPairsInDeck = newDeck.length;
+		updateCounter();
+	}
 
-        // 前回のペア履歴を記録
-        if (activePair) {
-            prevDisplay.textContent = `前回のペア: ${activePair}`;
-        }
+	function updateCounter() {
+		if (isFinished) {
+			counterDisplay.textContent = `残り: 0 / ${totalPairsInDeck}`;
+		} else {
+			const currentShowingCount = currentDeck.length + (activePair ? 1 : 0);
+			counterDisplay.textContent = `残り: ${currentShowingCount} / ${totalPairsInDeck}`;
+		}
+	}
 
-        // 次のペアを取り出す
-        if (currentDeck.length > 0) {
-            activePair = currentDeck.shift();
-            pairDisplay.textContent = activePair;
-            isFinished = false;
-        } else {
-            // デッキは空だが、今画面に出したのが「最後の1枚」だった場合
-            activePair = "";
-            pairDisplay.textContent = "終了";
-            isFinished = true; // 次回スペースキー/クリックで次の回へ
-        }
-        
-        updateCounter();
-    }
+	function showNextPair() {
+		if (pairDisplay.classList.contains('error')) return;
 
-    presetABtn.addEventListener('click', () => {
-        schemeInput.value = PRESET_A;
-        bufferInput.value = "あ";
-        generateDeck();
-        showNextPair();
-    });
+		if (isFinished || (currentDeck.length === 0 && !activePair)) {
+			generateDeck();
+			if (currentDeck.length === 0) {
+				pairDisplay.textContent = "なし";
+				isFinished = true;
+				updateCounter();
+				prevDisplay.textContent = "";
+				return;
+			}
+		}
 
-    presetBBtn.addEventListener('click', () => {
-        schemeInput.value = PRESET_B;
-        bufferInput.value = "A";
-        generateDeck();
-        showNextPair();
-    });
+		if (activePair) {
+			prevDisplay.textContent = `前回のペア: ${activePair}`;
+		}
 
-    schemeInput.addEventListener('input', generateDeck);
-    bufferInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
-    firstCharInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
-    nextBtn.addEventListener('click', showNextPair);
+		if (currentDeck.length > 0) {
+			activePair = currentDeck.shift();
+			pairDisplay.textContent = activePair;
+			isFinished = false;
+		} else {
+			activePair = "";
+			pairDisplay.textContent = "終了";
+			isFinished = true;
+		}
 
-    document.addEventListener('keydown', (event) => {
-        if (document.activeElement === firstCharInput || document.activeElement === bufferInput || document.activeElement === schemeInput) return;
-        if (event.code === 'Space') {
-            event.preventDefault();
-            showNextPair();
-        }
-    });
+		updateCounter();
+	}
 
-    generateDeck();
-    if (!pairDisplay.classList.contains('error')) showNextPair();
+	presetABtn.addEventListener('click', () => {
+		schemeInput.value = PRESET_A;
+		bufferInput.value = "あ";
+		generateDeck();
+		showNextPair();
+	});
+
+	presetBBtn.addEventListener('click', () => {
+		schemeInput.value = PRESET_B;
+		bufferInput.value = "A";
+		generateDeck();
+		showNextPair();
+	});
+
+	schemeInput.addEventListener('input', generateDeck);
+	bufferInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
+	firstCharInput.addEventListener('input', () => { generateDeck(); if (!pairDisplay.classList.contains('error')) showNextPair(); });
+	nextBtn.addEventListener('click', showNextPair);
+
+	document.addEventListener('keydown', (event) => {
+		if (document.activeElement === firstCharInput || document.activeElement === bufferInput || document.activeElement === schemeInput) return;
+		if (event.code === 'Space') {
+			event.preventDefault();
+			showNextPair();
+		}
+	});
+
+	generateDeck();
+	if (!pairDisplay.classList.contains('error')) showNextPair();
 </script>
 
 </body>
